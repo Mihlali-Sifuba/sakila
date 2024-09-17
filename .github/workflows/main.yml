@@ -1,0 +1,46 @@
+name: Deploy MySQL Scripts to AWS RDS
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Install MySQL client
+        run: sudo apt-get install mysql-client
+      - name: Create MySQL config file
+        run: |
+          echo "[client]" > .dbconfig.cnf
+          echo "user=${{ secrets.MYSQL_USER }}" >> .dbconfig.cnf
+          echo "password=${{ secrets.MYSQL_PASSWORD }}" >> .dbconfig.cnf
+          echo "host=${{ secrets.MYSQL_HOST }}" >> .dbconfig.cnf
+          echo "port=${{ secrets.MYSQL_PORT }}" >> .dbconfig.cnf
+          echo "database=${{ secrets.MYSQL_DATABASE }}" >> .dbconfig.cnf
+        shell: bash
+      - name: Generate DROP statements
+        run: |
+          folderPath="Stored Procedures"
+          outputFilePath="DropProcedures.sql"
+          touch $outputFilePath
+          for file in "$folderPath"/*.sql; do
+            procedureName=$(basename "$file" .sql)
+            echo "DROP PROCEDURE IF EXISTS \`$procedureName\`;" >> $outputFilePath
+          done
+        shell: bash
+      - name: Execute DROP statements on AWS RDS
+        run: |
+          mysql --defaults-extra-file=.dbconfig.cnf < DropProcedures.sql
+        shell: bash
+      - name: Deploy MySQL Stored Procedures, Functions, and Triggers
+        run: |
+          folderPath="Stored Procedures"
+          for file in "$folderPath"/*.sql; do
+            mysql --defaults-extra-file=.dbconfig.cnf < "$file"
+          done
+        shell: bash
+      - name: Finished deployment
+        run: echo "Deployment of MySQL scripts completed."
