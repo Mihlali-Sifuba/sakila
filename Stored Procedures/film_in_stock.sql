@@ -25,7 +25,7 @@ BEGIN
      AND store_id = p_store_id
      AND inventory_in_stock(inventory_id);
 
-     SELECT 1000000
+     SELECT 1000000000
      INTO p_film_count;
 END//
 DELIMITER ;
