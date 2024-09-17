@@ -10,7 +10,7 @@ jobs:
     environment: PROD  # Specify the environment here
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3 # Update to v3 to avoid deprecation warnings
       - name: Install MySQL client
         run: sudo apt-get install mysql-client
       - name: Create MySQL config file
